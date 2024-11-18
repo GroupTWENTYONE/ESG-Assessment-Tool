@@ -47,7 +47,7 @@ def process_pdf(filename) -> bool:
     #json_data = {line for line in array_data}
     # save 
     try:
-        with open(f"../formatted_data/{filename.replace('.pdf', '_formatted.json')}", 'w') as outfile:
+        with open(f"../formatted_data/{filename.replace('.pdf', '_formatted.json')}", 'w',encoding='utf-8') as outfile:
             json.dump(array_data, outfile, indent=2, ensure_ascii=False)
     except IOError as e:
         print(f"Error saving result of {filename}: {e}")
