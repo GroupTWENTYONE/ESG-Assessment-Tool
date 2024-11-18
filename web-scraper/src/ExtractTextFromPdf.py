@@ -48,7 +48,7 @@ def process_pdf(filename) -> bool:
     # save 
     try:
         with open(f"../formatted_data/{filename.replace('.pdf', '_formatted.json')}", 'w') as outfile:
-            json.dump(array_data, outfile, indent=2)
+            json.dump(array_data, outfile, indent=2, ensure_ascii=False)
     except IOError as e:
         print(f"Error saving result of {filename}: {e}")
         error = True
