@@ -1,6 +1,7 @@
 import json
 import PyPDF2
 import os
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -11,10 +12,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
-import time
+#import time
+import argparse
 
 def extract_text_from(filename):
-
     try:
         with open(f"../data/{filename}", 'rb') as file:
             pdf = PyPDF2.PdfReader(file)
@@ -23,29 +24,35 @@ def extract_text_from(filename):
     except Exception as e:
         print(f"Error processing {filename}: {e}")
         return None
-    
-def to_string_array(text):
 
+def extract_pages_from(filename):
+    try:
+        with open(f"../data/{filename}", 'rb') as file:
+            pdf = PyPDF2.PdfReader(file)
+            pages = []
+            for page in pdf.pages:
+                pages.append(page.extract_text())
+            return pages
+    except Exception as e:
+        print(f"Error processing {filename}: {e}")
+        return None
+
+def to_string_array(text):
+    #text.replace('\r', ' ').replace('\n', ' ').replace('  ', ' ')
+    #print(text)
+    text = re.sub(r'[\u00A0\t\n\r\u202F]+', ' ', text)
     data = text.split(". ")
-    '''
-    for line in data:
-        print("\nTHIS IS A SINGLE LINE: --------------------------------")
-        print(line)
-        print("\n")
-    '''
     return data
     
-def process_pdf(filename) -> bool:
-    # extract text 
-    extracted_text = extract_text_from(filename)
-    
-    # transform into output format
-    array_data = to_string_array(extracted_text)
+def process_pdf(filename, lines) -> bool:
+    if lines:
+        extracted_text = extract_text_from(filename)
+        array_data = to_string_array(extracted_text)
+    else:
+        array_data = extract_pages_from(filename)
 
     error = False
-
-    #json_data = {line for line in array_data}
-    # save 
+    # save data as json
     try:
         with open(f"../formatted_data/{filename.replace('.pdf', '_formatted.json')}", 'w') as outfile:
             json.dump(array_data, outfile, indent=2)
@@ -64,29 +71,29 @@ def process_pdf(filename) -> bool:
     
     return False if error else True
 
-def process_data():
-    #filenames = ["NASDAQ_AAPL_2022.pdf"]
+def process_data(lines):
+    # TEST:
+    #process_pdf("NYSE_ACN_2020.pdf", lines)
+    #process_pdf("NYSE_AOS_2022.pdf", lines)
+    #process_pdf("NASDAQ_ADBE_2023.pdf", lines)
+    #return
 
     for filename in os.listdir("../data/"):
         if not filename.endswith(".pdf"):
             continue
-        if process_pdf(filename) :
+        if process_pdf(filename, lines):
             print(f"{filename} processed")
-        else :
+        else:
             print(f"{filename} failed")
 
 
-
-def clear_cache():
-    for filename in os.listdir("../formatted_data/"):
+def delete(dir):
+    for filename in os.listdir(f"../{dir}/"):
         try:
-            os.remove(f"../formatted_data/{filename}")
+            os.remove(f"../{dir}/{filename}")
         except OSError as e:
-            print(f"Error removing pdf of {filename}: {e}")
+            print(f"Error removing file of {filename}: {e}")
             return False
-    
-
-#clear_cache()
 
 def get_data():
     response = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
@@ -118,9 +125,9 @@ def setup_driver():
 def download_reports(companies, driver):
     wait = WebDriverWait(driver, 1)
 
-    counter = 1
+    counter = 1 # <- TEST
     for company in companies:
-        if counter >= 9: break
+        if counter >= 9: break # <- TEST
         try:
             driver.get("https://www.responsibilityreports.com")
 
@@ -147,17 +154,34 @@ def download_reports(companies, driver):
             print(f"{exception}")
             continue
 
-        counter += 1
+        counter += 1 # <- TEST
 
 def scrape():
     data = get_data()
     companies = parse_companies(data)
-
     driver = setup_driver()
     download_reports(companies, driver)
-
     driver.quit()
 
 if __name__ == "__main__":
-    scrape()
-    process_data() # need to be adjusted to the webscraping process
+    parser = argparse.ArgumentParser(description="Asymmetric encryption and decryption")
+    parser.add_argument("-s", "--scrape", action="store_true", help="Get sustainbility reports from https://www.responsibilityreports.com")
+    parser.add_argument("-l", "--lines", action="store_true", help="Process report line by line")
+    parser.add_argument("-p", "--pages", action="store_true", help="Process report by pages of the document") #type=str
+    parser.add_argument("-c", "--clearjson", action="store_true", help="Use to remove all saved formatted json files")
+    parser.add_argument("-d", "--deletedocuments", action="store_true", help="Use to remove all saved sustainability reports")
+    
+    args = parser.parse_args()
+
+    if args.scrape:
+        scrape()
+
+    if args.lines:
+        process_data(args.lines)
+    elif args.pages:
+        process_data(False)
+
+    if args.clearjson:
+        delete("formatted_data")
+    elif args.deletedocuments:
+        delete("data")
