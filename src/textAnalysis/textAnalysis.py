@@ -5,6 +5,13 @@ import os
 import torch.nn.functional as F
 from transformers import pipeline, BertForSequenceClassification, BertTokenizer
 
+from databaseAccess.database import Database
+
+#import importlib
+#database = importlib.import_module("../database-access/database.py")
+
+
+
 class ESGAnalyzer:
     def __init__(self):
         # Load pre-trained ESG classification model
@@ -14,7 +21,8 @@ class ESGAnalyzer:
         self.finbert_model = BertForSequenceClassification.from_pretrained("yiyanghkust/finbert-esg", num_labels=4)
         self.tokenizer = BertTokenizer.from_pretrained("yiyanghkust/finbert-esg")
         self.nlp = pipeline("text-classification", model=self.finbert_model, tokenizer=self.tokenizer)
-        self.base_path = "./text-analysis/res/"
+        self.base_path = "./res/"
+        self.db = Database()
 
     
     def process_company(self, company_name, company_code):
@@ -59,17 +67,22 @@ class ESGAnalyzer:
     def _analyze_block(self, block):
         """Analyzes a single block of text."""
         result = self.nlp(block)
-        print(result)
+        
+        json_data = json.dumps(result)
+        data = json.loads(json_data)
+        
+        self.process_result(data[0]['label'], data[0]['score'])
+        
 
-        inputs = self.tokenizer(block, return_tensors="pt", truncation=True)
-        raw_result = self.finbert_model(**inputs)
-        logits = raw_result.logits
-        probabilities = F.softmax(logits, dim=1)
-
-        labels = ['None', 'Environmental', 'Social', 'Governance']
-        results = dict(zip(labels, [round(float(x), 4) for x in probabilities.detach().numpy()[0]]))
-        print(results)
-
+    def process_result(self, label, score):
+        
+        # check if company exists in db
+        company_id = self.db.get_company_id_by_ticker(self.company_code)
+        if company_id == None:
+            self.db.add_company(self.company_name, self.company_code)
+        # add esg component
+        print(label)
+        print(score)
 
 def main():
 
