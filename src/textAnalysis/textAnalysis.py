@@ -14,13 +14,26 @@ class ESGAnalyzer:
         # Load pre-trained ESG classification model
         # ADBE1.
              
-        self.classifier_pipeline = pipeline("text-classification", model="yiyanghkust/finbert-esg")
-        self.finbert_model = BertForSequenceClassification.from_pretrained("yiyanghkust/finbert-esg", num_labels=4)
-        self.tokenizer = BertTokenizer.from_pretrained("yiyanghkust/finbert-esg")
-        self.nlp = pipeline("text-classification", model=self.finbert_model, tokenizer=self.tokenizer)
+        finbert4_model = BertForSequenceClassification.from_pretrained("yiyanghkust/finbert-esg", num_labels=4)
+        tokenizer_finbert4 = BertTokenizer.from_pretrained("yiyanghkust/finbert-esg")
+        self.nlp_finbert4 = pipeline("text-classification", model=finbert4_model, tokenizer=tokenizer_finbert4)
+
+        finbert9_model = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-esg-9-categories',num_labels=9)
+        tokenizer_finbert9 = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg-9-categories')
+        self.nlp_finbert9 = pipeline("text-classification", model=finbert9_model, tokenizer=tokenizer_finbert9)
+
         self.base_path = "./res/"
         self.db = Database()
         self.logger = None
+
+        self.thresholds = {
+            "primary": 0.8,  # Primary classification threshold
+            "override_margin": 0.1,  # Margin for subcategory override
+            "weights": {"component": 0.7, "subcategory": 0.3, "mismatch_penalty": 0.5},
+            "Environmental": {"subcategories": ["Climate Change", "Natural Capital", "Pollution & Waste"]},
+            "Social": {"subcategories": ["Human Capital", "Product Liability", "Community Relations"]},
+            "Governance": {"subcategories": ["Corporate Governance", "Business Ethics & Values"]}
+        }
 
     def setup_logger(self, company_name):
         self.logger = Logger(company_name)
@@ -77,12 +90,21 @@ class ESGAnalyzer:
         try:
             self.logger.log("debug", f"Current Block:\n{block}")
 
-            result = self.nlp(block)
+            result4 = self.nlp_finbert4(block)
+            result9 = self.nlp_finbert9(block)
+            print(result4)
+            print(result9)
             
-            json_data = json.dumps(result)
-            data = json.loads(json_data)
+            json_data = json.dumps(result4)
+            data4 = json.loads(json_data)
+
+            json_data = json.dumps(result9)
+            data9 = json.loads(json_data)
+
+            esg_component = self.classify_esg(data4[0]['label'], data4[0]['score'], data9[0]['label'], data9[0]['score'])
+            print(esg_component)
             
-            self.process_result(data[0]['label'], data[0]['score'], block)
+            # self.process_result(data4[0]['label'], data4[0]['score'], block)
         except Exception as e:
             self.logger.log("error", f"Error analyzing block: {str(e)}")
         
@@ -103,6 +125,52 @@ class ESGAnalyzer:
         # add esg component
         self.db.add_esg_component(company_id, label[0].upper(), block)
         self.logger.log("info", f"Adding ESG component for {label} with score {score}")
+
+    def classify_esg(self, component, component_score, subcategory, subcategory_score):
+        """
+        Classify a text block based on a single component score and a single subcategory score.
+        
+        Args:
+            component (str): The ESG component name (e.g., "Environmental").
+            component_score (float): The score for the main ESG component.
+            subcategory (str): The subcategory name (e.g., "Climate Change").
+            subcategory_score (float): The score for the subcategory.
+        
+        Returns:
+            str: The classified ESG component (e.g., "Environmental", "None").
+        """
+        print(component)
+        print(subcategory)
+        
+        # Retrieve the subcategories for the given component
+        valid_subcategories = self.thresholds[component]["subcategories"]
+        primary_threshold = self.thresholds["primary"]
+        override_margin = self.thresholds["override_margin"]
+
+        # Check if the subcategory aligns with the component
+        if subcategory in valid_subcategories:
+            # Weighted score calculation
+            final_score = (
+                self.thresholds["weights"]["component"] * component_score +
+                self.thresholds["weights"]["subcategory"] * subcategory_score
+            )
+            # Classify based on thresholds
+            if final_score >= primary_threshold:
+                return component
+            elif subcategory_score - component_score >= override_margin:
+                return component  # Override if subcategory score is significantly higher
+        else:
+            # Penalize mismatched subcategories
+            final_score = (
+                self.thresholds["weights"]["component"] * component_score -
+                self.thresholds["weights"]["mismatch_penalty"] * subcategory_score
+            )
+            print(final_score)
+            if final_score >= primary_threshold:
+                return component
+
+        # Default to "None" if no strong match
+        return "None"
 
 def main():
 
