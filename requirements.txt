@@ -1,4 +1,0 @@
-PyPDF2
-bs4
-selenium
-webdriver_manager
