@@ -15,12 +15,49 @@ from selenium.webdriver.common.action_chains import ActionChains
 #import time
 import argparse
 
-def extract_text_from(filename):
+def extract_lines_from(filename):
     try:
         with open(f"../data/{filename}", 'rb') as file:
             pdf = PyPDF2.PdfReader(file)
             text = ''.join(page.extract_text() for page in pdf.pages)
             return text
+    except Exception as e:
+        print(f"Error processing {filename}: {e}")
+        return None
+'''
+def create_blocks(text, block_length = 1024):
+    i=0
+    f=[]
+    while(i<len(text)):
+        f.append(text[i:i+block_length])
+        i+=block_length
+    return f
+'''
+def create_blocks(text, block_length = 1024):
+    i = 0
+    f = []
+    while(i < len(text)):
+        line = text[i:i+block_length]
+        for ii in range(len(line)):
+            if line[len(line)-1 - ii] == '.' or line[len(line)-1 - ii] == ' ':
+                f.append(line[:len(line)-1 - ii])
+                i = i - ii
+                break
+        i += block_length
+    return f
+
+def extract_lines_in_1024_format_from(filename):
+    try:
+        with open(f"../data/{filename}", 'rb') as file:
+            pdf = PyPDF2.PdfReader(file)
+            lines = []
+            for page in pdf.pages:
+                if len(page.extract_text()) <= 1024:
+                    lines.append(page.extract_text())
+                else:
+                    line = create_blocks(page.extract_text())
+                    lines.extend(line)
+            return lines
     except Exception as e:
         print(f"Error processing {filename}: {e}")
         return None
@@ -37,20 +74,41 @@ def extract_pages_from(filename):
         print(f"Error processing {filename}: {e}")
         return None
 
-def to_string_array(text):
-    #text.replace('\r', ' ').replace('\n', ' ').replace('  ', ' ')
-    #print(text)
-    text = re.sub(r'[\u00A0\t\n\r\u202F]+', ' ', text)
-    data = text.split(". ")
-    return data
-    
+def clean_text(json_text):
+    cleaned_text = []
+    replacements = {
+        '\u00A0': ' ',
+        '\u202F': ' ',
+        '\u00a9': "'",
+        '\u02bb': "'",
+        '\u02bc': "'",
+        '\u2019': "'",
+        '\u2014': '-',
+        '\u2013': '-',
+        '\u25a0': '-',
+        '\u2022': '-',
+        '\u201d': '"',
+        '\u201c': '"',
+        '\u00b0': '°',
+        '\u00ba': '°'
+    }
+
+    for text in json_text:
+        for old, new in replacements.items():
+            text = text.replace(old, new)  
+
+        text = re.sub(r'[\n\t\r]', ' ', text) # replace other chars with space
+        text = re.sub(r'\s+', ' ', text).strip() # reduce multiple spaces to single one
+        cleaned_text.append(text)
+    return cleaned_text
+
 def process_pdf(filename, lines) -> bool:
     if lines:
-        extracted_text = extract_text_from(filename)
-        array_data = to_string_array(extracted_text)
+        array_data = extract_lines_in_1024_format_from(filename)
     else:
         array_data = extract_pages_from(filename)
-
+        
+    array_data = clean_text(array_data)
     error = False
     # save data as json
     try:
@@ -60,24 +118,9 @@ def process_pdf(filename, lines) -> bool:
         print(f"Error saving result of {filename}: {e}")
         error = True
     
-    #remove pdf
-    '''
-    try:
-        os.remove(f"../data/{filename}")
-    except OSError as e:
-        print(f"Error removing pdf of {filename}: {e}")
-        error = True
-    '''
-    
     return False if error else True
 
 def process_data(lines):
-    # TEST:
-    #process_pdf("NYSE_ACN_2020.pdf", lines)
-    #process_pdf("NYSE_AOS_2022.pdf", lines)
-    #process_pdf("NASDAQ_ADBE_2023.pdf", lines)
-    #return
-
     for filename in os.listdir("../data/"):
         if not filename.endswith(".pdf"):
             continue
@@ -127,7 +170,7 @@ def download_reports(companies, driver):
 
     counter = 1 # <- TEST
     for company in companies:
-        if counter >= 9: break # <- TEST
+        if counter >= 8: break # <- TEST
         try:
             driver.get("https://www.responsibilityreports.com")
 
