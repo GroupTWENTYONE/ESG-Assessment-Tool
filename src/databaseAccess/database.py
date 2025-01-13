@@ -13,7 +13,7 @@ class Database:
         self.db = self.client["company_db"]
         self.companies_collection = self.db["companies"]
 
-    def add_company(self, name, ticker):
+    def add_company(self, name: str, ticker: str) -> str:
         """
         Function to add Company to collection
         """
@@ -21,15 +21,16 @@ class Database:
             "name": name,
             "ticker": ticker,
             "esg_components": {
-                "environment": [],
-                "social": [],
-                "governance": []
+                "E": [],
+                "S": [],
+                "G": []
             }
         }
         result = self.companies_collection.insert_one(company)
-        print(f"Unternehmen inserted with ID: {result.inserted_id}")
+        print(f"Company inserted with ID: {result.inserted_id}")
+        return result.inserted_id
 
-    def add_esg_component(self, company_id, category, statement):
+    def add_esg_component(self, company_id: str, category: str, statement: str) -> int:
         """
         Add ESG-Component to Company
 
@@ -48,8 +49,10 @@ class Database:
 
         if result.modified_count > 0:
             print("ESG-Component added successfully.")
+            return 1
         else:
             print("Failure on insert of ESG-Component. Check Company-ID")
+            return -1
 
     def get_company(self, company_id):
         """
@@ -74,7 +77,7 @@ class Database:
             print(company)
 
 
-    def get_company_id_by_ticker(self, ticker):
+    def get_company_id_by_ticker(self, ticker) -> str | None:
         """
         get Company ID by Ticker
 
@@ -88,18 +91,3 @@ class Database:
             print("Company does not exist")
             return None
 
-# Example
-if __name__ == "__main__":
-    add_company("Amazon", "AMZN")
-
-    example_company_id = "63a2d3f8e19f5d24b8f4a123"  # Eample ID
-    # TODO: make ticker UNIQUE
-    add_esg_component(example_company_id, "E", "Reduziert CO2-Emissionen um 10% bis 2030.")
-    add_esg_component(example_company_id, "S", "Führt Diversitätsprogramme ein.")
-    add_esg_component(example_company_id, "G", "Verbessert Transparenz in der Unternehmensführung.")
-
-    company = get_company(example_company_id)
-    if company:
-        print(company)
-
-    list_companies()

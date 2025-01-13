@@ -7,10 +7,6 @@ from transformers import pipeline, BertForSequenceClassification, BertTokenizer
 
 from databaseAccess.database import Database
 
-#import importlib
-#database = importlib.import_module("../database-access/database.py")
-
-
 
 class ESGAnalyzer:
     def __init__(self):
@@ -25,7 +21,7 @@ class ESGAnalyzer:
         self.db = Database()
 
     
-    def process_company(self, company_name, company_code):
+    def process_company(self, company_name: str, company_code: str):
         self.company_name = company_name
         self.company_code = company_code
 
@@ -36,11 +32,11 @@ class ESGAnalyzer:
             file_content = self.load_json_file(self.build_file_path(company_code, filename))
             self.analyze(file_content)
 
-    def build_file_path(self, company_code, filename):
+    def build_file_path(self, company_code: str, filename: str):
         return self.base_path+company_code+"/"+filename
 
     @staticmethod
-    def load_json_file(filename):
+    def load_json_file(filename: str):
         """Loads a JSON file and returns its content."""
         with open(filename, 'r') as file:
             return json.load(file)
@@ -71,18 +67,19 @@ class ESGAnalyzer:
         json_data = json.dumps(result)
         data = json.loads(json_data)
         
-        self.process_result(data[0]['label'], data[0]['score'])
+        self.process_result(data[0]['label'], data[0]['score'], block)
         
 
-    def process_result(self, label, score):
-        
+    def process_result(self, label: str, score: float, block):
+        if score < 0.75 or label == "None":
+            print(f"Score {score} is to low, block will be skipped")
+            return
         # check if company exists in db
         company_id = self.db.get_company_id_by_ticker(self.company_code)
         if company_id == None:
-            self.db.add_company(self.company_name, self.company_code)
+            company_id = self.db.add_company(self.company_name, self.company_code)
         # add esg component
-        print(label)
-        print(score)
+        self.db.add_esg_component(company_id, label[0].upper(), block)
 
 def main():
 
