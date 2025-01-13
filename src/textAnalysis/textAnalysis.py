@@ -92,58 +92,45 @@ class ESGAnalyzer:
 
             result4 = self.nlp_finbert4(block)
             result9 = self.nlp_finbert9(block)
-            print(result4)
-            print(result9)
-            
-            json_data = json.dumps(result4)
-            data4 = json.loads(json_data)
 
-            json_data = json.dumps(result9)
-            data9 = json.loads(json_data)
-
-            esg_component = self.classify_esg(data4[0]['label'], data4[0]['score'], data9[0]['label'], data9[0]['score'])
-            print(esg_component)
+            self.process_result(result4, result9, block)
             
-            # self.process_result(data4[0]['label'], data4[0]['score'], block)
         except Exception as e:
             self.logger.log("error", f"Error analyzing block: {str(e)}")
-        
 
-    def process_result(self, label: str, score: float, block):
-        if score < 0.75:
-            print(f"Score {score} is to low, block will be skipped")
-            self.logger.log("warning", f"Low score {score}. Block skipped.")
-            return
-        if label == "None":
-            print(f"No relation to any ESG component. Block skipped.")
-            self.logger.log("warning", f"No relation to any ESG component. Block skipped.")
-            return
+    def process_result(self, result4, result9, block):
+        print(result4)
+        print(result9)
+        
+        json_data = json.dumps(result4)
+        data4 = json.loads(json_data)
+
+        json_data = json.dumps(result9)
+        data9 = json.loads(json_data)
+
+        esg_component = self.classify_esg(data4[0]['label'], data4[0]['score'], data9[0]['label'], data9[0]['score'])
+        print(esg_component)
+        
+        if esg_component != "None":
+            self.save_result(esg_component, block)
+        else:
+            self.logger.log("warning", f"Not relevant. Block skipped.")
+
+    def save_result(self, label: str, block):
         # check if company exists in db
         company_id = self.db.get_company_id_by_ticker(self.company_code)
         if company_id == None:
             company_id = self.db.add_company(self.company_name, self.company_code)
         # add esg component
         self.db.add_esg_component(company_id, label[0].upper(), block)
-        self.logger.log("info", f"Adding ESG component for {label} with score {score}")
+        self.logger.log("info", f"Adding ESG component for {label}")
 
-    def classify_esg(self, component, component_score, subcategory, subcategory_score):
-        """
-        Classify a text block based on a single component score and a single subcategory score.
-        
-        Args:
-            component (str): The ESG component name (e.g., "Environmental").
-            component_score (float): The score for the main ESG component.
-            subcategory (str): The subcategory name (e.g., "Climate Change").
-            subcategory_score (float): The score for the subcategory.
-        
-        Returns:
-            str: The classified ESG component (e.g., "Environmental", "None").
-        """
-        print(component)
-        print(subcategory)
-        
+    def classify_esg(self, component: str, component_score, subcategory: str, subcategory_score) -> str:
         # Retrieve the subcategories for the given component
-        valid_subcategories = self.thresholds[component]["subcategories"]
+        if component != "None":
+            valid_subcategories = self.thresholds[component]["subcategories"]
+        else:
+            valid_subcategories = []
         primary_threshold = self.thresholds["primary"]
         override_margin = self.thresholds["override_margin"]
 
@@ -159,17 +146,30 @@ class ESGAnalyzer:
                 return component
             elif subcategory_score - component_score >= override_margin:
                 return component  # Override if subcategory score is significantly higher
+        elif component == "None":
+            if subcategory_score > 0.85 and component_score < 0.6:
+                return self.get_component_by_subcategory(subcategory)
+            elif subcategory_score > 0.95:
+                return self.get_component_by_subcategory(subcategory)
+            else:
+                return component
         else:
             # Penalize mismatched subcategories
             final_score = (
                 self.thresholds["weights"]["component"] * component_score -
                 self.thresholds["weights"]["mismatch_penalty"] * subcategory_score
             )
-            print(final_score)
             if final_score >= primary_threshold:
                 return component
 
         # Default to "None" if no strong match
+        return "None"
+    
+    def get_component_by_subcategory(self, subcategory):
+        for component, data in self.thresholds.items():
+            if component in ["Environmental", "Social", "Governance"]:
+                if subcategory in data["subcategories"]:
+                    return component
         return "None"
 
 def main():
