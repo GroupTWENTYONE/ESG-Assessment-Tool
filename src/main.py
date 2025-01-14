@@ -3,6 +3,9 @@ from textAnalysis.textAnalysis import ESGAnalyzer
 from databaseAccess.database import Database
 from logger.logger import Logger
 
+from webScraper.webScraper import WebScraper
+from webScraper.documentProcessor import DocumentProcessor
+
 base_path = "./res"
 logger = Logger("main_program")
 
@@ -24,9 +27,16 @@ def main():
     # for each company
     #   analyzer process_company
 
+def web_scaper_test():
+    scraper = WebScraper()
+    companies = scraper.get_sp500_companies()
+    scraper.download_reports(companies)
+
+    DocumentProcessor.process_all_pdfs(split_into_lines=True)
+
 def print_database():
     database = Database()
     database.list_companies()
 
 if __name__ == "__main__":
-    main()
+    web_scaper_test()
