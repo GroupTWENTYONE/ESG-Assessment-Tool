@@ -6,28 +6,27 @@ from logger.logger import Logger
 from webScraper.webScraper import WebScraper
 from webScraper.documentProcessor import DocumentProcessor
 
-base_path = "./res"
+base_path = "./prepared_data/"
+res_path = "./res"
 logger = Logger("main_program")
 
 def main():
+
+    run_web_scaper()
 
     analyzer = ESGAnalyzer()
     
     try:
         for file in os.listdir(base_path):
             filename = os.fsdecode(file)
-            if os.path.isdir(os.path.join(base_path, filename)):
+            if not os.path.isdir(os.path.join(base_path, filename)):
                 continue
             print(filename)
-            # analyzer.process_company("Adobe", "ADBE")
+            analyzer.process_company(filename)
     except Exception as e:
         logger.log("error", f"Error processing company {filename}: {str(e)}")
-    
-    
-    # for each company
-    #   analyzer process_company
 
-def web_scaper_test():
+def run_web_scaper():
     scraper = WebScraper()
     companies = scraper.get_sp500_companies()
     scraper.download_reports(companies)
@@ -39,4 +38,4 @@ def print_database():
     database.list_companies()
 
 if __name__ == "__main__":
-    web_scaper_test()
+    main()

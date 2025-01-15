@@ -58,7 +58,7 @@ class DocumentProcessor:
         return cleaned_text
 
     @staticmethod
-    def process_pdf(filename, split_into_lines):
+    def process_pdf(filename: str, split_into_lines):
         """Processes a PDF file and saves the formatted data as JSON."""
         if split_into_lines:
             text = DocumentProcessor.extract_text_from_pdf(filename)
@@ -68,8 +68,12 @@ class DocumentProcessor:
 
         array_data = DocumentProcessor.clean_text(array_data)
         error = False
+        start_index = filename.index('_') + 1
+        end_index = filename.index('_', start_index)
+        company_code = filename[start_index:end_index]
+        os.makedirs(f"{PREPARED_DATA_DIR}/{company_code}", exist_ok=True)
         try:
-            with open(f"{PREPARED_DATA_DIR}{filename.replace(PDF_EXT, JSON_EXT)}", 'w') as outfile:
+            with open(f"{PREPARED_DATA_DIR}{company_code}/{filename.replace(PDF_EXT, JSON_EXT)}", 'w') as outfile:
                 json.dump(array_data, outfile, indent=2)
         except IOError as e:
             print(f"Error saving result of {filename}: {e}")

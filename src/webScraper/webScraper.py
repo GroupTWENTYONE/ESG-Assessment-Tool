@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -44,14 +45,13 @@ class WebScraper:
         chrome_options.add_experimental_option('prefs', chrome_download_configs)
         return webdriver.Chrome(options=chrome_options)
 
-    @staticmethod
-    def download_reports(companies):
+    def download_reports(self, companies):
         """Downloads responsibility reports for the given companies."""
         driver = WebScraper.setup_driver()
         wait = WebDriverWait(driver, 10)
 
         for index, company in enumerate(companies, start=1):
-            if index > 15:  # Limit for testing
+            if index > 8:  # Limit for testing
                 break
 
             try:
@@ -80,4 +80,20 @@ class WebScraper:
                 print(f"Error with {company}: {e}")
                 continue
 
+        try:
+            self.wait_for_downloads(timeout=100)
+        except TimeoutError as e:
+            print(f"Warning: {e}")
+        
         driver.quit()
+
+
+    def wait_for_downloads(self, timeout=100):
+        """Wait until all downloads are finished in the download folder."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            # Check if any files are still downloading (indicated by .crdownload on Chrome or .part on Firefox)
+            if not any(filename.endswith(('.crdownload', '.part')) for filename in os.listdir(DATA_DIR)):
+                return
+            time.sleep(1)  # Polling interval
+        raise TimeoutError("Downloads did not finish in the expected time.")
