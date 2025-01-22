@@ -62,6 +62,8 @@ class DocumentProcessor:
         """Processes a PDF file and saves the formatted data as JSON."""
         if split_into_lines:
             text = DocumentProcessor.extract_text_from_pdf(filename)
+            if text is None:
+                return False
             array_data = DocumentProcessor.create_blocks(text)
         else:
             array_data = DocumentProcessor.extract_text_from_pdf(filename).splitlines()
@@ -69,7 +71,12 @@ class DocumentProcessor:
         array_data = DocumentProcessor.clean_text(array_data)
         error = False
         start_index = filename.index('_') + 1
-        end_index = filename.index('_', start_index)
+        try:
+            end_index = filename.index('_', start_index)
+        except:
+            print(f"File {filename} could not be processed")
+            return False
+
         company_code = filename[start_index:end_index]
         os.makedirs(f"{PREPARED_DATA_DIR}/{company_code}", exist_ok=True)
         try:

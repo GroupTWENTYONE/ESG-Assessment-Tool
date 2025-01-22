@@ -22,7 +22,7 @@ class ESGAnalyzer:
 
         self.base_path = "./prepared_data/"
         self.db = Database()
-        self.logger = None
+        self.logger = Logger("main_program")
 
         self.thresholds = {
             "primary": 0.8,  # Primary classification threshold
@@ -38,9 +38,12 @@ class ESGAnalyzer:
 
     def process_company(self, company_code: str):
         self.company_name = self.get_company_name(company_code)
+        if self.company_name == "":
+            self.logger.log("error", f"Error processing company {self.company_name}: company name not found")
+            return
         self.company_code = company_code
 
-        self.setup_logger(self.company_name)
+        self.setup_logger(self.company_name.replace('/', '_'))
         self.logger.log("info", f"Processing company: {self.company_name} ({company_code})")
 
         # load documents
@@ -171,9 +174,20 @@ class ESGAnalyzer:
         return "None"
     
     def get_company_name(self, symbol) -> str:
-        msft = yf.Ticker(symbol)
+        try:
+            msft = yf.Ticker(symbol)
+            if not msft.info: 
+                print(f"No information available for symbol: {symbol}")
+                return ""
 
-        return msft.info['longName']
+            company_name = msft.info.get('longName', "")
+            if not company_name:
+                print(f"Company name not found for symbol: {symbol}")
+            return company_name
+
+        except Exception as e:
+            print(f"Error fetching company name for symbol {symbol}: {e}")
+            return ""
 
 def main():
 

@@ -1,4 +1,5 @@
 import os
+import asyncio
 from textAnalysis.textAnalysis import ESGAnalyzer
 from databaseAccess.database import Database
 from logger.logger import Logger
@@ -21,7 +22,6 @@ def main():
             filename = os.fsdecode(file)
             if not os.path.isdir(os.path.join(base_path, filename)):
                 continue
-            print(filename)
             analyzer.process_company(filename)
     except Exception as e:
         logger.log("error", f"Error processing company {filename}: {str(e)}")

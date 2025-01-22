@@ -51,9 +51,11 @@ class WebScraper:
         wait = WebDriverWait(driver, 10)
 
         for index, company in enumerate(companies, start=1):
+            '''
             if index > 8:  # Limit for testing
                 break
-
+            '''
+            
             try:
                 driver.get(RESPONSIBILITY_REPORTS_URL)
 

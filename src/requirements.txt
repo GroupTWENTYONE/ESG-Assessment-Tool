@@ -1,0 +1,11 @@
+PyPDF2
+bs4
+selenium
+webdriver_manager
+bs4
+torch
+transformers
+requests
+yfinance
+pymongo
+numpy
