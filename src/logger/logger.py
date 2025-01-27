@@ -1,7 +1,5 @@
 import logging
-import json
 import os
-import math
 from transformers import pipeline, BertForSequenceClassification, BertTokenizer
 from databaseAccess.database import Database
 

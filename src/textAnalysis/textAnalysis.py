@@ -1,9 +1,9 @@
 import json
-import math
-import argparse
 import os
 import torch.nn.functional as F
 from transformers import pipeline, BertForSequenceClassification, BertTokenizer
+import requests
+import yfinance as yf
 
 from databaseAccess.database import Database
 from logger.logger import Logger
@@ -11,8 +11,6 @@ from logger.logger import Logger
 
 class ESGAnalyzer:
     def __init__(self):
-        # Load pre-trained ESG classification model
-        # ADBE1.
              
         finbert4_model = BertForSequenceClassification.from_pretrained("yiyanghkust/finbert-esg", num_labels=4)
         tokenizer_finbert4 = BertTokenizer.from_pretrained("yiyanghkust/finbert-esg")
@@ -22,9 +20,9 @@ class ESGAnalyzer:
         tokenizer_finbert9 = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg-9-categories')
         self.nlp_finbert9 = pipeline("text-classification", model=finbert9_model, tokenizer=tokenizer_finbert9)
 
-        self.base_path = "./res/"
+        self.base_path = "./prepared_data/"
         self.db = Database()
-        self.logger = None
+        self.logger = Logger("main_program")
 
         self.thresholds = {
             "primary": 0.8,  # Primary classification threshold
@@ -38,12 +36,15 @@ class ESGAnalyzer:
     def setup_logger(self, company_name):
         self.logger = Logger(company_name)
 
-    def process_company(self, company_name: str, company_code: str):
-        self.company_name = company_name
+    def process_company(self, company_code: str):
+        self.company_name = self.get_company_name(company_code)
+        if self.company_name == "":
+            self.logger.log("error", f"Error processing company {self.company_name}: company name not found")
+            return
         self.company_code = company_code
 
-        self.setup_logger(company_name)
-        self.logger.log("info", f"Processing company: {company_name} ({company_code})")
+        self.setup_logger(self.company_name.replace('/', '_'))
+        self.logger.log("info", f"Processing company: {self.company_name} ({company_code})")
 
         # load documents
         try:
@@ -52,7 +53,7 @@ class ESGAnalyzer:
                 file_content = self.load_json_file(self.build_file_path(company_code, filename))
                 self.analyze(file_content)
         except Exception as e:
-            self.logger.log("error", f"Error processing company {company_name}: {str(e)}")
+            self.logger.log("error", f"Error processing company {self.company_name}: {str(e)}")
 
 
     def build_file_path(self, company_code: str, filename: str):
@@ -171,6 +172,22 @@ class ESGAnalyzer:
                 if subcategory in data["subcategories"]:
                     return component
         return "None"
+    
+    def get_company_name(self, symbol) -> str:
+        try:
+            msft = yf.Ticker(symbol)
+            if not msft.info: 
+                print(f"No information available for symbol: {symbol}")
+                return ""
+
+            company_name = msft.info.get('longName', "")
+            if not company_name:
+                print(f"Company name not found for symbol: {symbol}")
+            return company_name
+
+        except Exception as e:
+            print(f"Error fetching company name for symbol {symbol}: {e}")
+            return ""
 
 def main():
 
