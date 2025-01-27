@@ -17,7 +17,47 @@ The **ESG Assessment Tool** is an automated solution for evaluating a company's 
 - **Automation**: Seamlessly processes data for S&P 500 companies without manual intervention.
 
 ## Installation
-**To Be Completed:** Add detailed instructions for setting up the project on your system, including dependencies, Docker setup, and running the scripts.
+
+Follow these steps to set up the ESG Assessment Tool on your local machine:
+
+### Prerequisites
+- **Python 3.11+**:
+  - **Windows**: [Download Python](https://www.python.org/downloads/)
+  - **Linux/macOS**: Python is usually pre-installed. If not, use your system's package manager to install it.
+
+---
+
+### Steps to Install
+
+1. **Clone the Repository**:  
+   a. Open a terminal and run:  
+   ```bash
+   git clone https://github.com/GroupTWENTYONE/ESG-Assessment-Tool.git
+   ```
+   b. Alternatively, download the ZIP file from the repository and extract it.
+2. Navigate to the Project Folder:
+    ```bash
+    cd ESG-Assessment-Tool
+    ```
+3. Create a Virtual Environment:
+- Linux/macOS
+    ```bash
+    python -m venv ./src/.venv
+    source ./src/.venv/bin/activate
+    ```
+- Windows
+    ```bash
+    python -m venv .\src\.venv
+    .\src\.venv\Scripts\activate
+    ```
+4. Install Project Dependencies:
+    ```bash
+    pip install -r ./src/requirements.txt
+    ```
+6. Run the Application:
+    ```bash
+    python ./src/main.py
+    ```
 
 ## Usage
 1. **Web Scraping**: Automatically downloads ESG-related documents.
