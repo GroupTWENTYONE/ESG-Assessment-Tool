@@ -1,2 +1,5 @@
-web-scraper/src/constant.py
-/.venv/
+.venv/
+__pycache__/
+logs/
+raw_data/
+prepared_data/
