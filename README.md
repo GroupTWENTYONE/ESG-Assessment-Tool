@@ -25,11 +25,24 @@ Follow these steps to set up the ESG Assessment Tool on your local machine:
   - **Windows**: [Download Python](https://www.python.org/downloads/)
   - **Linux/macOS**: Python is usually pre-installed. If not, use your system's package manager to install it.
 
+#### Database 
+1. Clone the Repository<br>
+   a. Open a terminal and run:
+   ```bash
+   git clone https://github.com/GroupTWENTYONE/ESG-Assessment-Tool.git
+   ```
+   b. Alternatively, download the ZIP file from the repository and extract it.
+3. Install Docker
+4. Open project database (dbConfig) folder in terminal
+5. Run
+   ```bash
+   docker compose up
+   ```
 ---
 
-### Steps to Install
+### Steps to Install and run
 
-1. **Clone the Repository**:  
+1. Clone the Repository:  
    a. Open a terminal and run:  
    ```bash
    git clone https://github.com/GroupTWENTYONE/ESG-Assessment-Tool.git
