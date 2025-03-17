@@ -5,15 +5,9 @@ import re
 
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.action_chains import ActionChains
 #import time
 import argparse
+import threading
 
 def extract_lines_from(filename):
     try:
@@ -24,15 +18,7 @@ def extract_lines_from(filename):
     except Exception as e:
         print(f"Error processing {filename}: {e}")
         return None
-'''
-def create_blocks(text, block_length = 1024):
-    i=0
-    f=[]
-    while(i<len(text)):
-        f.append(text[i:i+block_length])
-        i+=block_length
-    return f
-'''
+
 def create_blocks(text, block_length = 1024):
     i = 0
     f = []
@@ -125,17 +111,16 @@ def process_data(lines):
         if not filename.endswith(".pdf"):
             continue
         if process_pdf(filename, lines):
-            print(f"{filename} processed")
+            print(f"{filename} processed.")
         else:
-            print(f"{filename} failed")
-
+            print(f"{filename} failed.")
 
 def delete(dir):
     for filename in os.listdir(f"../{dir}/"):
         try:
             os.remove(f"../{dir}/{filename}")
         except OSError as e:
-            print(f"Error removing file of {filename}: {e}")
+            print(f"Error while removing file of {filename}: {e}")
             return False
 
 def get_data():
@@ -151,60 +136,74 @@ def parse_companies(entire_table):
         companies.append(company)
     return companies
 
-def setup_driver():
-    download_directory_path = os.path.abspath(os.getcwd())[:-3] + "data"
+def download_company_report(company):
+    try:
+        # Send request to get the next HTML of the company to get the needed URL "extension" (example: to add /Company/apple-inc to https://www.responsibilityreports.com)
+        r = requests.get(f"https://www.responsibilityreports.com/Companies?search={company}")
+        soup = BeautifulSoup(r.text, "html.parser")
+        all_links = soup.findAll("a")
 
-    ChromeDriverManager().install()
-    chrome_download_configs = {
-        "download.default_directory": download_directory_path,
-        "download.prompt_for_download": False, 
-        "download.directory_upgrade": True,
-        "plugins.always_open_pdf_externally": True
-    }
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_experimental_option('prefs', chrome_download_configs)
-    return webdriver.Chrome(options=chrome_options)
+        company_link = None
+        for a in all_links:
+            if a.get("href", "").startswith("/Company"):
+                company_link = a["href"]
+                break
 
-def download_reports(companies, driver):
-    wait = WebDriverWait(driver, 1)
+        if not company_link:
+            print(f"No company link found for {company}")
+            return
 
-    counter = 1 # <- TEST
+        r = requests.get(f"https://www.responsibilityreports.com{company_link}")
+        soup = BeautifulSoup(r.text, "html.parser")
+        all_links = soup.findAll("a")
+
+        download_url = None
+        for a in all_links:
+            if a.get("href", "").startswith("/HostedData/") and a.text == "Download":
+                download_url = a["href"]
+                break
+
+        if not download_url:
+            print(f"No download URL found for {company}")
+            return
+
+        filename = download_url[42:]  # Extract filename from URL
+        print(f"Getting file from URL: https://www.responsibilityreports.com{download_url}")
+
+        r = requests.get(f"https://www.responsibilityreports.com{download_url}")
+        if r.status_code == 200:
+            # Adjust "Downloads" directory appropriately
+            download_path = os.path.abspath(os.getcwd())[:-3] + "data"
+            download_path = os.path.join(download_path, filename)
+
+            # Save the PDF file
+            with open(download_path, 'wb') as f:
+                f.write(r.content)
+
+            print(f"Successfully downloaded: {filename}\n")
+        else:
+            print(f"Failed to download file for {company}, status code: {r.status_code}")
+
+    except Exception as exception:
+        print(f"Error downloading report for {company}: {exception}")
+
+def download_reports(companies):
+    threads = []
+
     for company in companies:
-        if counter >= 8: break # <- TEST
-        try:
-            driver.get("https://www.responsibilityreports.com")
+        # Create a thread for each company
+        thread = threading.Thread(target=download_company_report, args=(company,))
+        threads.append(thread)
+        thread.start()
 
-            search_bar = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div.container > section.banner_section > div > div > div.left_section > form > input[type=text]:nth-child(2)")))
-            search_bar.send_keys(company) # here the element of the company list but you can use for example "AAPL" as well
-            search_bar.submit()
-
-            link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div.container > section.category_section > div.apparel_stores_company_list > ul > li:nth-child(2) > span:nth-child(1) > a")))
-            link.click()
-
-            try:
-                first_report = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div.container > section > div.profile_content_block > div.right_section > div.most_recent_block > div.most_recent_content_block > div.view_btn > a")))
-                first_report.click()
-
-                try:
-                    popup = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div.container > div > div > div.close_popup > a")))
-                    popup.click()
-                except:
-                    pass
-            except Exception as excetpion:
-                pass
-
-        except Exception as exception:
-            print(f"{exception}")
-            continue
-
-        counter += 1 # <- TEST
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
 
 def scrape():
     data = get_data()
     companies = parse_companies(data)
-    driver = setup_driver()
-    download_reports(companies, driver)
-    driver.quit()
+    download_reports(companies)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Asymmetric encryption and decryption")
