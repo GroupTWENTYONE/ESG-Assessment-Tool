@@ -2,7 +2,6 @@ import json
 import os
 import torch.nn.functional as F
 from transformers import pipeline, BertForSequenceClassification, BertTokenizer
-import requests
 import yfinance as yf
 
 from databaseAccess.database import Database
