@@ -45,6 +45,8 @@ class ESGAnalyzer:
 
         self.setup_logger(self.company_name.replace('/', '_'))
         self.logger.log("info", f"Processing company: {self.company_name} ({company_code})")
+        ##
+        print("start company " + company_code)
 
         # load documents
         try:

@@ -1,3 +1,4 @@
+from threading import Thread
 import PyPDF2
 import os
 import json
@@ -87,6 +88,12 @@ class DocumentProcessor:
             error = True
 
         return not error
+    
+    def process_pdf_threaded(filename, split_into_lines):
+        if DocumentProcessor.process_pdf(filename, split_into_lines):
+            print(f"{filename} processed")
+        else:
+            print(f"{filename} failed")
 
     @staticmethod
     def process_all_pdfs(split_into_lines):
@@ -95,7 +102,7 @@ class DocumentProcessor:
             if not filename.endswith(PDF_EXT):
                 continue
 
-            if DocumentProcessor.process_pdf(filename, split_into_lines):
-                print(f"{filename} processed")
-            else:
-                print(f"{filename} failed")
+            thread = Thread(target=DocumentProcessor.process_pdf_threaded, args=(filename, split_into_lines))
+            thread.start()
+            thread.join()
+
