@@ -15,7 +15,7 @@ logger = Logger("main_program")
 
 def main():
 
-    #run_web_scaper()
+    run_web_scaper()
 
     analyzer = ESGAnalyzer()
     executor = ThreadPoolExecutor(max_workers=10)
@@ -35,8 +35,7 @@ def main():
 
 def run_web_scaper():
     scraper = WebScraper()
-    companies = scraper.get_sp500_companies()
-    scraper.download_reports(companies)
+    scraper.scrape()
 
     DocumentProcessor.process_all_pdfs(split_into_lines=True)
 
