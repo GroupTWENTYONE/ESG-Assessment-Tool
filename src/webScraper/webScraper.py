@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 RESPONSIBILITY_REPORTS_URL = "https://www.responsibilityreports.com"
 WIKI_SP500_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-DATA_DIR = "./raw_data/"
+DATA_DIR = "../raw_data/"
 
 class WebScraper:    
     def get_data(self):
@@ -23,7 +23,7 @@ class WebScraper:
 
     def download_company_report(self, company):
         try:
-            # Send request to get the next HTML of the company to get the needed URL "extension" (example: to add /Company/apple-inc to https://www.responsibilityreports.com)
+            # send request to get the next HTML of the company to get the needed URL "extension" (example: to add /Company/apple-inc to https://www.responsibilityreports.com)
             r = requests.get(f"https://www.responsibilityreports.com/Companies?search={company}")
             soup = BeautifulSoup(r.text, "html.parser")
             all_links = soup.findAll("a")
@@ -52,16 +52,16 @@ class WebScraper:
                 print(f"No download URL found for {company}")
                 return
 
-            filename = download_url[42:]  # Extract filename from URL
+            filename = download_url[42:]  # extract filename from URL
             print(f"Getting file from URL: https://www.responsibilityreports.com{download_url}")
 
             r = requests.get(f"https://www.responsibilityreports.com{download_url}")
             if r.status_code == 200:
-                # Adjust "Downloads" directory appropriately
+                # adjust "Downloads" directory appropriately
                 download_path = os.path.abspath(DATA_DIR)
                 download_path = os.path.join(download_path, filename)
 
-                # Save the PDF file
+                # save the PDF file
                 with open(download_path, 'wb') as f:
                     f.write(r.content)
 
@@ -76,12 +76,12 @@ class WebScraper:
         threads = []
 
         for company in companies:
-            # Create a thread for each company
+            # create a thread for each company as this is not a cpu intensive task
             thread = threading.Thread(target=self.download_company_report, args=(company,))
             threads.append(thread)
             thread.start()
 
-        # Wait for all threads to finish
+        # wait for all threads to finish
         for thread in threads:
             thread.join()
 

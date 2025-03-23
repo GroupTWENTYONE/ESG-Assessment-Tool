@@ -19,7 +19,7 @@ class ESGAnalyzer:
         tokenizer_finbert9 = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg-9-categories')
         self.nlp_finbert9 = pipeline("text-classification", model=finbert9_model, tokenizer=tokenizer_finbert9)
 
-        self.base_path = "./prepared_data/"
+        self.base_path = "../prepared_data/"
         self.db = Database()
         self.logger = Logger("main_program")
 

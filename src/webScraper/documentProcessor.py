@@ -1,11 +1,12 @@
-from threading import Thread
+#from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 import PyPDF2
 import os
 import json
 import re
 
-DATA_DIR = "./raw_data/"
-PREPARED_DATA_DIR = "./prepared_data/"
+DATA_DIR = "../raw_data/"
+PREPARED_DATA_DIR = "../prepared_data/"
 PDF_EXT = ".pdf"
 JSON_EXT = "_formatted.json"
 BLOCK_LENGTH = 1024
@@ -97,12 +98,17 @@ class DocumentProcessor:
 
     @staticmethod
     def process_all_pdfs(split_into_lines):
-        """Processes all PDF files in the data directory."""
-        for filename in os.listdir(DATA_DIR):
-            if not filename.endswith(PDF_EXT):
-                continue
+        with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor: # as many threads as cpu cores available (does not create a thread for each file as this might be more cpu intensive and therefore less efficient)
+            futures = []
+            
+            for filename in os.listdir(DATA_DIR):
+                if not filename.endswith(PDF_EXT):
+                    continue
 
-            thread = Thread(target=DocumentProcessor.process_pdf_threaded, args=(filename, split_into_lines))
-            thread.start()
-            thread.join()
-
+                # starting the "threads"
+                future = executor.submit(DocumentProcessor.process_pdf_threaded, filename, split_into_lines)
+                futures.append(future)
+            
+            # wait for all threads to finish
+            for future in futures:
+                future.result()
