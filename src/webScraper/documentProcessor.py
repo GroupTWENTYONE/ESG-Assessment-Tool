@@ -5,8 +5,8 @@ import os
 import json
 import re
 
-DATA_DIR = "../raw_data/"
-PREPARED_DATA_DIR = "../prepared_data/"
+DATA_DIR = "raw_data/"
+PREPARED_DATA_DIR = "prepared_data/"
 PDF_EXT = ".pdf"
 JSON_EXT = "_formatted.json"
 BLOCK_LENGTH = 1024

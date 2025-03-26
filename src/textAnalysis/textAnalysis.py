@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import torch.nn.functional as F
@@ -19,9 +20,12 @@ class ESGAnalyzer:
         tokenizer_finbert9 = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg-9-categories')
         self.nlp_finbert9 = pipeline("text-classification", model=finbert9_model, tokenizer=tokenizer_finbert9)
 
-        self.base_path = "../prepared_data/"
+        self.base_path = "prepared_data/"
         self.db = Database()
         self.logger = Logger("main_program")
+
+        self.futures = []
+        self.executor = ThreadPoolExecutor(max_workers=os.cpu_count())
 
         self.thresholds = {
             "primary": 0.8,  # Primary classification threshold
@@ -36,12 +40,14 @@ class ESGAnalyzer:
         self.logger = Logger(company_name)
 
     def process_company(self, company_code: str):
+        self.futures = []
         self.company_name = self.get_company_name(company_code)
         if self.company_name == "":
-            self.logger.log("error", f"Error processing company {self.company_name}: company name not found")
+            self.logger.log("error", f"Error processing company {self.company_code}: company name not found")
             return
         self.company_code = company_code
 
+        self.logger.log("info", f"Processing company: {self.company_name} ({company_code})")
         self.setup_logger(self.company_name.replace('/', '_'))
         self.logger.log("info", f"Processing company: {self.company_name} ({company_code})")
         ##
@@ -53,6 +59,10 @@ class ESGAnalyzer:
                 filename = os.fsdecode(file)
                 file_content = self.load_json_file(self.build_file_path(company_code, filename))
                 self.analyze(file_content)
+
+            #wait for all threads to finish
+            for future in self.futures:
+                future.result()
         except Exception as e:
             self.logger.log("error", f"Error processing company {self.company_name}: {str(e)}")
 
@@ -83,9 +93,13 @@ class ESGAnalyzer:
                 for j, block in enumerate(sentence_blocks):
                     print(f"\nAnalyzing Sentence {i + 1}.{j + 1}:")
                     self.logger.log("debug", f"Analyzing sentence {i + 1}.{j + 1}")
-                    self._analyze_block(block)
+                    future = self.executor.submit(self._analyze_block, block)
+                    self.futures.append(future)
+                    #self._analyze_block(block)
             else:
-                self._analyze_block(sentence)
+                future = self.executor.submit(self._analyze_block, sentence)
+                self.futures.append(future)
+                #self._analyze_block(sentence)
 
     def _analyze_block(self, block):
         """Analyzes a single block of text."""

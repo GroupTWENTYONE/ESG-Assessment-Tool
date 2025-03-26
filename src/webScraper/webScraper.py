@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 RESPONSIBILITY_REPORTS_URL = "https://www.responsibilityreports.com"
 WIKI_SP500_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-DATA_DIR = "../raw_data/"
+DATA_DIR = "raw_data/"
 
 class WebScraper:    
     def get_data(self):

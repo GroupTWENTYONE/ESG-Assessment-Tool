@@ -11,11 +11,11 @@ from webScraper.documentProcessor import DocumentProcessor
 
 import time
 
-base_path = "../prepared_data/"
+base_path = "prepared_data/"
 
 def main():
     start_time = time.time()
-    run_web_scaper()
+    #run_web_scaper()
     analyze_and_store_companies()
 
     end_time = time.time()
@@ -33,20 +33,21 @@ def analyze_and_store_companies():
     try:
         with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor: # as many threads as cpu cores available (does not create a thread for each file as this might be more cpu intensive and therefore less efficient)
             futures = []
-            
+            analyzer = ESGAnalyzer()
             for file in os.listdir(base_path):
                 filename = os.fsdecode(file)
                 if not os.path.isdir(os.path.join(base_path, filename)):
                     continue
 
-                analyzer = ESGAnalyzer()
+                
+                analyzer.process_company(filename)
                 # starting the "threads"
-                future = executor.submit(analyzer.process_company, filename)
-                futures.append(future)
-            
+                #future = executor.submit(analyzer.process_company, filename)
+                #futures.append(future)
+               
             # wait for all threads to finish
-            for future in futures:
-                future.result()
+            #for future in futures:
+            #   future.result()
 
     except Exception as e:
         logger.log("error", f"Error processing company {filename}: {str(e)}")
