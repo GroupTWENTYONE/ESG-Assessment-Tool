@@ -1,0 +1,12 @@
+[
+  {
+    "company_id": "680e2b65e4de08d2346c4e12",
+    "texts": ["Test ESG Statement", "Test ESG Statement 2", "Test ESG Statement 3"],
+    "esg_score": "44"
+  },
+  {
+    "company_id": "680e405080ce31502116e348",
+    "texts": [],
+    "esg_score": null
+  }
+]
