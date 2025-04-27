@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import urllib.parse
+from typing import Optional
 
 # Verbindung zur MongoDB herstellen
 # More informations: https://pymongo.readthedocs.io/en/stable/examples/authentication.html
@@ -13,6 +14,8 @@ class Database:
         self.db = self.client["company_db"]
         self.companies_collection = self.db["companies"]
 
+        
+
     def add_company(self, name: str, ticker: str) -> str:
         """
         Function to add Company to collection
@@ -24,11 +27,78 @@ class Database:
                 "E": [],
                 "S": [],
                 "G": []
-            }
+            },
+            "calculated_esg_score": None,
+            "spglobal_esg_score": None
         }
         result = self.companies_collection.insert_one(company)
         print(f"Company inserted with ID: {result.inserted_id}")
         return result.inserted_id
+
+    def migrate_old_entries_to_new_schema(self):
+        result = self.companies_collection.update_many(
+            {},
+            {
+                "$set": {
+                    "calculated_esg_score": None,
+                    "spglobal_esg_score": None
+                }
+            }
+        )
+        print(f"Modified {result.modified_count} existing companies.")
+
+
+
+    def set_calculated_esg_score(self, company_id: str, score: int) -> int:
+        """
+        Set calculated_esg_score for a company, clearing any existing value first
+        """
+        # Clear existing calculated score if present
+        existing = self.companies_collection.find_one({"_id": ObjectId(company_id)})
+        if existing and existing.get("calculated_esg_score") is not None:
+            self.companies_collection.update_one(
+                {"_id": ObjectId(company_id)},
+                {"$set": {"calculated_esg_score": None}}
+            )
+
+        result = self.companies_collection.update_one(
+            {"_id": ObjectId(company_id)},
+            {"$set": {"calculated_esg_score": score}}
+        )
+
+        if result.modified_count > 0:
+            print("calculated_esg_score updated successfully.")
+            return 1
+        else:
+            print("Failed to update calculated_esg_score. Check Company-ID.")
+            return -1
+        
+
+    def set_spglobal_esg_score(self, company_id: str, score: int) -> int:
+        """
+        Set spglobal_esg_score for a company, clearing any existing value first
+        """
+        # Clear existing SP Global ESG score if present
+        existing = self.companies_collection.find_one({"_id": ObjectId(company_id)})
+        if existing and existing.get("spglobal_esg_score") is not None:
+            self.companies_collection.update_one(
+                {"_id": ObjectId(company_id)},
+                {"$set": {"spglobal_esg_score": None}}
+            )
+
+        result = self.companies_collection.update_one(
+            {"_id": ObjectId(company_id)},
+            {"$set": {"spglobal_esg_score": score}}
+        )
+
+        if result.modified_count > 0:
+            print("spglobal_esg_score updated successfully.")
+            return 1
+        else:
+            print("Failed to update spglobal_esg_score. Check Company-ID.")
+            return -1
+
+
 
     def add_esg_component(self, company_id: str, category: str, statement: str) -> int:
         """
@@ -69,15 +139,17 @@ class Database:
             return None
 
     def list_companies(self):
-        """
-        Get every company
-        """
         companies = self.companies_collection.find()
-        for company in companies:
-            print(company)
+        return [company.get('name') for company in companies]
 
-
-    def get_company_id_by_ticker(self, ticker) -> str | None:
+    def get_company_id_by_name(self, name) -> Optional[str]:
+        company = self.companies_collection.find_one({"name": name})
+        if company:
+            return str(company["_id"])
+        else:
+            return None
+    
+    def get_company_id_by_ticker(self, ticker) -> Optional[str]:
         """
         get Company ID by Ticker
 
@@ -90,4 +162,3 @@ class Database:
         else:
             print("Company does not exist")
             return None
-

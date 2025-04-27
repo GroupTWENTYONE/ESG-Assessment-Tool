@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bs4 import BeautifulSoup
 from logger.logger import Logger
+from databaseAccess.database import Database
 
 SEARCH_URL = "https://www.spglobal.com/esg/csa/esg-proxy?comp-name="
 COMPANY_URL = "https://www.spglobal.com/esg/scores/results?cid="
@@ -16,7 +17,7 @@ DATA_DIR = os.path.join(BASE_DIR, "spg_global_data")
 OUTPUT_FILE = os.path.join(DATA_DIR, "esg_scores.json")
 
 class WebScraper:
-    def __init__(self, company_names):
+    def __init__(self, company_names=None):
         self.logger = Logger("spglobal_scraper")
         self.company_scores = {}
         if not os.path.exists(DATA_DIR):
@@ -26,12 +27,18 @@ class WebScraper:
              except OSError as e:
                  self.logger.log("error", f"Failed to create directory {DATA_DIR}: {e}")
                  raise
+        # If initialized with a list of company names, run immediately
+        if company_names is not None:
+            self.scrape(company_names)
 
+    def scrape(self, company_names):
+        """Run scraping for given list of company names."""
         self.process_companies(company_names)
         self.save_scores_to_json()
 
     def process_companies(self, company_names):
         """Iterates through company names, fetches and stores ESG scores."""
+        db = Database()
         for name in company_names:
             self.logger.log("info", f"Processing company: {name}")
             try:
@@ -40,6 +47,9 @@ class WebScraper:
                     score = self.get_esg_score(company_id)
                     if score:
                         self.company_scores[name] = score
+                        db_id = db.get_company_id_by_name(name)
+                        print(f"Company ID: {db_id}")
+                        db.set_spglobal_esg_score(db_id, score)
                         self.logger.log("info", f"Successfully retrieved score for {name}: {score}")
                     else:
                         self.logger.log("warning", f"Could not retrieve score for {name} (ID: {company_id})")
@@ -175,19 +185,16 @@ class WebScraper:
         except Exception as e:
             self.logger.log("error", f"An unexpected error occurred during JSON saving: {e}")
 
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+def init(company_names):
+    """Test the S&P Global scraper with a list of company names and print results."""
+    scraper = WebScraper(company_names)
+    print("ESG Scores:", scraper.company_scores)
 
-    main_logger = Logger("__main__") 
-    main_logger.log("info", "Starting S&P Global ESG score scraping...")
+if __name__ == "__main__":
+    db = Database()
+    companies = db.list_companies()
+    print(f"Companies to process: {companies}")
 
-    companies_to_scrape = ["Apple Inc."] # Example list
-    try:
-        scraper = WebScraper(companies_to_scrape)
-        main_logger.log("info", "Scraping process completed.")
-        main_logger.log("info", f"Collected Scores ({len(scraper.company_scores)}):")
-        main_logger.log("info", json.dumps(scraper.company_scores, indent=4))
-        main_logger.log("info", f"Check the log file at ./logs/spglobal_scraper.log and the output file at {OUTPUT_FILE}")
-    except Exception as e:
-        main_logger.log("critical", f"A critical error occurred during the scraping process: {e}")
+    # Example usage: replace with your own list to test
+    init(companies)
+
