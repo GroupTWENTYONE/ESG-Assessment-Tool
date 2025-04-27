@@ -1,5 +1,5 @@
 version: '3.8'
-name: ESG-Tool
+name: esg_tool
 
 services:
   mongodb:

@@ -1,7 +1,5 @@
 import logging
 import os
-from transformers import pipeline, BertForSequenceClassification, BertTokenizer
-from databaseAccess.database import Database
 
 # Set up logging
 class Logger:
