@@ -1,7 +1,10 @@
+import json
+import os
 import torch
 from torch import nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from transformers import BertTokenizer, BertModel
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # === GPU oder CPU ===
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -220,6 +223,11 @@ extended_firm_data = [
     }
 ]
 
+real_firm_data = []
+ml_ready_esg_data_path = "../spg_global_data/ml_ready_esg_data.json"
+if os.path.exists(ml_ready_esg_data_path):
+    with open(ml_ready_esg_data_path, 'r', encoding='utf-8') as f:
+        real_firm_data = json.load(f)
 
 # === Tokenizer ===
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -305,6 +313,74 @@ def train_model(model, dataloader, optimizer, epochs=10):
             total_loss += loss.item()
         print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(dataloader):.4f}")
 
+def train_model_with_val(model, train_loader, optimizer, epochs=10, val_loader=None):
+    model.train()
+    loss_fn = nn.MSELoss()
+
+    for epoch in range(epochs):
+        total_loss = 0
+        model.train()
+
+        for batch in train_loader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["label"].to(device)
+
+            optimizer.zero_grad()
+            outputs = model(input_ids, attention_mask)
+            loss = loss_fn(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+
+        avg_train_loss = total_loss / len(train_loader)
+        
+        # Validation
+        if val_loader is not None:
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for batch in val_loader:
+                    input_ids = batch["input_ids"].to(device)
+                    attention_mask = batch["attention_mask"].to(device)
+                    labels = batch["label"].to(device)
+
+                    outputs = model(input_ids, attention_mask)
+                    loss = loss_fn(outputs, labels)
+
+                    val_loss += loss.item()
+
+            avg_val_loss = val_loss / len(val_loader)
+            print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+        else:
+            print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}")
+
+
+def test_model(model, test_loader):
+    model.eval()
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids'].to(device)  # Move to correct device
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['label'].to(device)
+
+            preds = model(input_ids, attention_mask)
+
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    # Metrics
+    mse = mean_squared_error(all_labels, all_preds)
+    mae = mean_absolute_error(all_labels, all_preds)
+    r2 = r2_score(all_labels, all_preds)
+
+    print(f"Test MSE: {mse:.4f}")
+    print(f"Test MAE: {mae:.4f}")
+    print(f"Test R²: {r2:.4f}")
 
 # === Prediction-Funktion ===
 def predict_company_score(model, texts):
@@ -331,9 +407,41 @@ def predict_company_score(model, texts):
 
 # === Main Execution ===
 if __name__ == "__main__":
+    # Init Dataset
+    dataset = CompanyESGDataset(real_firm_data, tokenizer)
+
+    # Split dataset into Train / Validation / Test
+    total_size = len(dataset)
+    train_size = int(0.7 * total_size)
+    val_size = int(0.15 * total_size)
+    test_size = total_size - train_size - val_size  # Ensure all data is used
+
+    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+
+    # Create Dataloaders
+    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=2, shuffle=False)
+    
+    # Init Model & Optimizer
+    model = ESGAggregatorModel().to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
+
+    # Train (Pass the validation loader if your train_model supports it)
+    train_model_with_val(model, train_loader, optimizer, epochs=5, val_loader=val_loader)
+    
+    torch.save(model.state_dict(), "esg_aggregator_model.pth")
+
+    
+    # Evaluate on the test set
+    test_model(model, test_loader)
+
+# === Main Execution old === 
+'''
+if __name__ == "__main__":
     # Init Dataset & Dataloader
-    all_data = firm_data + extended_firm_data
-    dataset = CompanyESGDataset(all_data, tokenizer)
+    #all_data = firm_data + extended_firm_data
+    dataset = CompanyESGDataset(real_firm_data, tokenizer)
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
 
     # Init Model & Optimizer
@@ -400,3 +508,4 @@ if __name__ == "__main__":
 
     score = predict_company_score(model, mixed_firm)
     print(f"Mixed firm ESG Score: {score:.2f}")
+'''

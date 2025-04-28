@@ -9,7 +9,7 @@ from databaseAccess.database import Database
 
 def export_companies_to_json():
     db = Database()
-    db.add_company("Test Company", "TEST")
+    #db.add_company("Test Company", "TEST")
     output = []
     # Fetch all company documents
     for doc in db.companies_collection.find():
@@ -20,10 +20,12 @@ def export_companies_to_json():
         for cat in ["E", "S", "G"]:
             texts.extend(components.get(cat, []))
         esg_score = doc.get("spglobal_esg_score")
+        if esg_score is None:
+            continue  # Skip if ESG score is not available
         output.append({
             "company_id": company_id,
             "texts": texts,
-            "esg_score": esg_score
+            "esg_score": float(esg_score)
         })
     json_data = json.dumps(output, indent=4)
     print(json_data)
