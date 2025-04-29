@@ -8,6 +8,10 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # === GPU oder CPU ===
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if device.type == 'cuda':
+    print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+else:
+    print("Using CPU")
 
 # === Beispielhafte Firmendaten ===
 firm_data = [
@@ -428,7 +432,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
 
     # Train (Pass the validation loader if your train_model supports it)
-    train_model_with_val(model, train_loader, optimizer, epochs=5, val_loader=val_loader)
+    train_model_with_val(model, train_loader, optimizer, epochs=10, val_loader=val_loader)
     
     torch.save(model.state_dict(), "esg_aggregator_model.pth")
 
