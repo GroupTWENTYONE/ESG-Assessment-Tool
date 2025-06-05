@@ -194,21 +194,3 @@ class Database:
         else:
             print("Company does not exist")
             return None
-        
-    def get_spglobal_individual_scores(self, company_id: str):
-        """
-        Get individual ESG scores for a company
-        
-        :param company_id: ID of company as String
-        :return: Tuple of (environmental, social, governance) scores or None if not found
-        """
-        company = self.companies_collection.find_one({"_id": ObjectId(company_id)})
-        if company and "spglobal_individual_scores" in company:
-            individual_scores = company["spglobal_individual_scores"]
-            return (
-                individual_scores.get("environmental"),
-                individual_scores.get("social"), 
-                individual_scores.get("governance")
-            )
-        else:
-            return None
