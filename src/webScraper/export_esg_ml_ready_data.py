@@ -22,6 +22,10 @@ def export_companies_to_json():
         company_id = str(doc.get("_id"))
         components = doc.get("esg_components", {})
         esg_score = doc.get("spglobal_esg_score")
+
+        if not components or esg_score is None:
+            print(f"Skipping company {company_id} due to missing components or ESG score.")
+            continue
         
         # Get E (Environmental) components
         e_texts = components.get("E", [])
