@@ -16,16 +16,16 @@ def export_companies_to_json():
         company_id = str(doc.get("_id"))
         components = doc.get("esg_components", {})
         # Combine E, S, G texts
-        texts = []
+        text = ""
         for cat in ["E", "S", "G"]:
-            texts.extend(components.get(cat, []))
+            text += " ".join(components.get(cat, []))
         esg_score = doc.get("spglobal_esg_score")
         if esg_score is None:
             continue  # Skip if ESG score is not available
         output.append({
-            "company_id": company_id,
-            "texts": texts,
-            "esg_score": float(esg_score)
+            "id": company_id,
+            "text": text,
+            "score": float(esg_score)
         })
     json_data = json.dumps(output, indent=4)
     print(json_data)
