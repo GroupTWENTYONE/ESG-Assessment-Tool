@@ -3,4 +3,5 @@ __pycache__/
 logs/
 raw_data/
 prepared_data/
-esg_model/
+ML/esg_model/*
+esg_model/*

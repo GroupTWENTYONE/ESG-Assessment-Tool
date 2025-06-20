@@ -14,29 +14,31 @@ class Database:
         self.db = self.client["company_db"]
         self.companies_collection = self.db["companies"]
 
-    def add_company(self, name: str, ticker: str) -> str:
-        """
-        Function to add Company to collection
-        """
-        company = {
-            "name": name,
-            "ticker": ticker,
-            "esg_components": {
-                "E": [],
-                "S": [],
-                "G": []
-            },
-            "calculated_esg_score": None,
-            "spglobal_esg_score": None,
-            "spglobal_individual_scores": {
-                "environmental": None,
-                "social": None,
-                "governance": None
+        
+
+        def add_company(self, name: str, ticker: str) -> str:
+            """
+            Function to add Company to collection
+            """
+            company = {
+                "name": name,
+                "ticker": ticker,
+                "esg_components": {
+                    "E": [],
+                    "S": [],
+                    "G": []
+                },
+                "calculated_esg_score": None,
+                "spglobal_esg_score": None,
+                "spglobal_individual_scores": {
+                    "environmental": None,
+                    "social": None,
+                    "governance": None
+                }
             }
-        }
-        result = self.companies_collection.insert_one(company)
-        print(f"Company inserted with ID: {result.inserted_id}")
-        return result.inserted_id
+            result = self.companies_collection.insert_one(company)
+            print(f"Company inserted with ID: {result.inserted_id}")
+            return result.inserted_id
 
     def migrate_old_entries_to_new_schema(self):
         result = self.companies_collection.update_many(
@@ -54,6 +56,8 @@ class Database:
             }
         )
         print(f"Modified {result.modified_count} existing companies.")
+
+
 
     def set_calculated_esg_score(self, company_id: str, score: int) -> int:
         """
@@ -104,33 +108,7 @@ class Database:
             print("Failed to update spglobal_esg_score. Check Company-ID.")
             return -1
 
-    def set_spglobal_individual_scores(self, company_id: str, environmental: int = None, social: int = None, governance: int = None) -> int:
-        """
-        Set individual ESG scores for a company
-        """
-        update_data = {}
-        if environmental is not None:
-            update_data["spglobal_individual_scores.environmental"] = environmental
-        if social is not None:
-            update_data["spglobal_individual_scores.social"] = social
-        if governance is not None:
-            update_data["spglobal_individual_scores.governance"] = governance
 
-        if not update_data:
-            print("No scores provided to update.")
-            return -1
-
-        result = self.companies_collection.update_one(
-            {"_id": ObjectId(company_id)},
-            {"$set": update_data}
-        )
-
-        if result.modified_count > 0:
-            print("Individual ESG scores updated successfully.")
-            return 1
-        else:
-            print("Failed to update individual ESG scores. Check Company-ID.")
-            return -1
 
     def add_esg_component(self, company_id: str, category: str, statement: str) -> int:
         """
@@ -193,22 +171,4 @@ class Database:
             return str(company["_id"])
         else:
             print("Company does not exist")
-            return None
-        
-    def get_spglobal_individual_scores(self, company_id: str):
-        """
-        Get individual ESG scores for a company
-        
-        :param company_id: ID of company as String
-        :return: Tuple of (environmental, social, governance) scores or None if not found
-        """
-        company = self.companies_collection.find_one({"_id": ObjectId(company_id)})
-        if company and "spglobal_individual_scores" in company:
-            individual_scores = company["spglobal_individual_scores"]
-            return (
-                individual_scores.get("environmental"),
-                individual_scores.get("social"), 
-                individual_scores.get("governance")
-            )
-        else:
             return None

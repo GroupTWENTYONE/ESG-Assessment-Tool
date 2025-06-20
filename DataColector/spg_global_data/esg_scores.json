@@ -1,14 +1,13 @@
 {
-<<<<<<< HEAD
-    "Apple Inc.": "44",
+    "Apple Inc.": "43",
     "Abbott Laboratories": "65",
     "Autodesk, Inc.": "57",
     "American International Group, Inc.": "41",
-    "Albemarle Corporation": "62",
+    "Albemarle Corporation": "61",
     "Advanced Micro Devices, Inc.": "50",
     "Amgen Inc.": "42",
     "Adobe Inc.": "57",
-    "Airbnb, Inc.": "23",
+    "Airbnb, Inc.": "17",
     "Acadia Healthcare Company, Inc.": "19",
     "Amazon.com, Inc.": "22",
     "ANSYS, Inc.": "45",
@@ -46,7 +45,7 @@
     "CSX Corporation": "53",
     "Coterra Energy Inc.": "36",
     "Corteva, Inc.": "39",
-    "Chevron Corporation": "37",
+    "Chevron Corporation": "34",
     "Caesars Entertainment, Inc.": "50",
     "Deckers Outdoor Corporation": "43",
     "Dell Technologies Inc.": "46",
@@ -106,7 +105,7 @@
     "Motorola Solutions, Inc.": "43",
     "Norwegian Cruise Line Holdings Ltd.": "52",
     "NetApp, Inc.": "49",
-    "Occidental Petroleum Corporation": "43",
+    "Occidental Petroleum Corporation": "32",
     "Palo Alto Networks, Inc.": "49",
     "Paychex, Inc.": "37",
     "The Progressive Corporation": "28",
@@ -116,6 +115,7 @@
     "PTC Inc.": "42",
     "Quanta Services, Inc.": "37",
     "PayPal Holdings, Inc.": "60",
+    "QUALCOMM Incorporated": "62",
     "Regeneron Pharmaceuticals, Inc.": "63",
     "Raymond James Financial, Inc.": "36",
     "RTX Corporation": "27",
@@ -145,10 +145,6 @@
     "Verisk Analytics, Inc.": "53",
     "Vertex Pharmaceuticals Incorporated": "39",
     "Vistra Corp.": "48",
-    "Viatris Inc.": "42",
+    "Viatris Inc.": "31",
     "Walmart Inc.": "50"
-=======
-    "Apple Inc.": "43",
-    "Rheinmetall AG": "43"
->>>>>>> feature/spglobal-scrapper
 }
