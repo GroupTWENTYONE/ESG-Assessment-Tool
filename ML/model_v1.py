@@ -228,10 +228,15 @@ extended_firm_data = [
 ]
 
 real_firm_data = []
-ml_ready_esg_data_path = "../spg_global_data/ml_ready_esg_data.json"
+ml_ready_esg_data_path = "./ML/ml_ready_data/ml_ready_esg_data_model1.json"
 if os.path.exists(ml_ready_esg_data_path):
     with open(ml_ready_esg_data_path, 'r', encoding='utf-8') as f:
         real_firm_data = json.load(f)
+else:
+    print(f"File {ml_ready_esg_data_path} does not exist.")
+
+
+#real_firm_data = extended_firm_data
 
 # === Tokenizer ===
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -239,7 +244,7 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 # === Dataset ===
 class CompanyESGDataset(Dataset):
-    def __init__(self, firm_data, tokenizer, max_length=128, max_blocks=10):
+    def __init__(self, firm_data, tokenizer, max_length=128, max_blocks=5):
         self.firm_data = firm_data
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -432,9 +437,9 @@ if __name__ == "__main__":
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
 
     # Train (Pass the validation loader if your train_model supports it)
-    train_model_with_val(model, train_loader, optimizer, epochs=10, val_loader=val_loader)
+    train_model_with_val(model, train_loader, optimizer, epochs=1, val_loader=val_loader)
     
-    torch.save(model.state_dict(), "esg_aggregator_model.pth")
+    torch.save(model.state_dict(), "./ML/esg_aggregator_model.pth")
 
     
     # Evaluate on the test set

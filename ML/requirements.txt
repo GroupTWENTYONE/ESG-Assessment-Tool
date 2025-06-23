@@ -1,3 +1,6 @@
 torch
 transformers
 scikit-learn
+datasets
+matplotlib
+evaluate

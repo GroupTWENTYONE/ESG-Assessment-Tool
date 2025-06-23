@@ -5,3 +5,6 @@ raw_data/
 prepared_data/
 ML/esg_model/*
 esg_model/*
+ML/ml_ready_data/*
+ML/models/*
+ML/esg_aggregator_model.pth
