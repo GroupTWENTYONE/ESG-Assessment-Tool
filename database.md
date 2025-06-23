@@ -34,7 +34,7 @@ The main collection `companies` in the `company_db` database stores company data
 
 ## Database Class
 
-The `Database` class in `databaseAccess/database.py` provides an abstraction for MongoDB operations:
+The `Database` class in `DataColector/src/databaseAccess/database.py` provides an abstraction for MongoDB operations:
 
 ### Connection
 
