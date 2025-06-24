@@ -20,7 +20,7 @@ class ESGAnalyzer:
         tokenizer_finbert9 = BertTokenizer.from_pretrained('yiyanghkust/finbert-esg-9-categories')
         self.nlp_finbert9 = pipeline("text-classification", model=finbert9_model, tokenizer=tokenizer_finbert9)
 
-        self.base_path = "prepared_data/"
+        self.base_path = "DataCollector/prepared_data/"
         self.db = Database()
         self.logger = Logger("main_program")
 
@@ -43,7 +43,7 @@ class ESGAnalyzer:
         self.futures = []
         self.company_name = self.get_company_name(company_code)
         if self.company_name == "":
-            self.logger.log("error", f"Error processing company {self.company_code}: company name not found")
+            self.logger.log("error", f"Error processing company {company_code}: company name not found")
             return
         self.company_code = company_code
 
@@ -198,6 +198,7 @@ class ESGAnalyzer:
             company_name = msft.info.get('longName', "")
             if not company_name:
                 print(f"Company name not found for symbol: {symbol}")
+                return ""
             return company_name
 
         except Exception as e:
