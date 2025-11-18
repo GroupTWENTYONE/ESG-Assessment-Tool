@@ -27,25 +27,24 @@ async function send(){
     var userMessage = document.getElementById("user-message").value;
     if(userMessage === "")
         return;
-
-    addMessage(userMessage, "user");
-    document.getElementById("user-message").value = "";
-    
-    //machineReply();
     
     try{
-        const response = await fetch("https://postman-echo.com/get?msg=Hi", { // URL HIER ANPASSEN
-            method: "GET",
-            headers: {
+        addMessage(userMessage, "user");
+        const response = await fetch("/api/forward", {
+            method: "POST",
+            headers:{
                 "Content-Type": "application/json"
-            }
+            },
+            body: JSON.stringify({
+                message: userMessage
+            })
         });
 
         const data = await response.json();
-        console.log(data);
-        addMessage(data, "machine");
+        addMessage(data[0].output, "machine");
     }catch(error){
         addMessage(error, "machine");
     }
-    /**/
+
+    document.getElementById("user-message").value = "";
 }
