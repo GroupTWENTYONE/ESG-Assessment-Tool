@@ -1,0 +1,35 @@
+services:
+  express-frontend:
+    build:
+      context: .
+      dockerfile: ./Business-Layer/Express-Server/Dockerfile
+    container_name: express-server
+    ports:
+      - "80:80"
+    depends_on:
+      n8n:
+        condition: service_healthy
+  
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8n
+      - N8N_PORT=5678
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_USER_MANAGEMENT_DISABLED=true
+      - N8N_IMPORT_EXPORT_DIR=/data
+      - N8N_IMPORT_ON_START=full
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./Business-Layer:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  n8n_data:

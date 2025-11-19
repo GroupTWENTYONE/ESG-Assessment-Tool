@@ -28,6 +28,8 @@ async function send(){
     if(userMessage === "")
         return;
     
+    document.getElementById("user-message").value = "";
+
     try{
         addMessage(userMessage, "user");
         const response = await fetch("/api/forward", {
@@ -43,8 +45,6 @@ async function send(){
         const data = await response.json();
         addMessage(data[0].output, "machine");
     }catch(error){
-        addMessage(error, "machine");
+        alert(error.message);
     }
-
-    document.getElementById("user-message").value = "";
 }

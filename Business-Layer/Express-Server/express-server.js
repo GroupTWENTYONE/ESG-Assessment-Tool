@@ -3,17 +3,17 @@ const path = require("path");
 const cors = require("cors");
 
 const app = express();
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "../../Presentation-Layer/public")));
 app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/index.html"));
+    res.sendFile(path.join(__dirname, "../../Presentation-Layer/public/index.html"));
 })
 
 app.post("/api/forward", async (req, res) => {
     try{
-        const response = await fetch("http://localhost:5678/webhook/chat-gemini", {
+        const response = await fetch("http://n8n:5678/webhook/chat-gemini", {
             method: "POST",
             headers:{
                 "Content-Type": "application/json"
@@ -29,4 +29,4 @@ app.post("/api/forward", async (req, res) => {
     }
 })
 
-app.listen(3000, () => console.log("Server running on http://localhost:3000"))
+app.listen(80, () => console.log("Server running on http://localhost:80"))
