@@ -10,11 +10,23 @@ services:
       n8n:
         condition: service_healthy
   
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    container_name: ollama
+    networks:
+      - n8n-network
+    volumes:
+      - ollama_data:/root/.ollama
+
   n8n:
     image: n8nio/n8n
     container_name: n8n
     ports:
       - "5678:5678"
+    networks:
+      - n8n-network
     environment:
       - N8N_HOST=n8n
       - N8N_PORT=5678
@@ -22,6 +34,7 @@ services:
       - N8N_USER_MANAGEMENT_DISABLED=true
       - N8N_IMPORT_EXPORT_DIR=/data
       - N8N_IMPORT_ON_START=full
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
     volumes:
       - n8n_data:/home/node/.n8n
       - ./Business-Layer:/data
@@ -31,5 +44,9 @@ services:
       timeout: 5s
       retries: 5
 
+networks:
+  n8n-network:
+
 volumes:
+  ollama_data:
   n8n_data:
