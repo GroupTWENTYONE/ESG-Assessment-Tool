@@ -18,6 +18,11 @@ services:
     container_name: ollama
     networks:
       - n8n-network
+
+    command: >
+      /bin/sh -c "
+      /bin/ollama pull llama3-groq-tool-use:8b 
+      "
     volumes:
       - ollama_data:/root/.ollama
 
