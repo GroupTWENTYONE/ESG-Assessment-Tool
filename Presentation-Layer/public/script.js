@@ -32,18 +32,44 @@ async function send(){
 
     try{
         addMessage(userMessage, "user");
-        const response = await fetch("/api/forward", {
+        const response = await fetch("api/forward", {
             method: "POST",
             headers:{
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                message: userMessage
+                
+                    "model": "llama3",
+                    "prompt": userMessage,
+                    "stream": false
+                
             })
+            
+        
         });
 
+
+
+        if (!response.ok) {
+            // Read the error from the API for better debugging
+            const errorText = await response.text(); 
+            throw new Error(`API Request Failed: ${response.status} - ${errorText.substring(0, 100)}...`);
+        }
+
         const data = await response.json();
-        addMessage(data[0].output, "machine");
+        console.log(data);
+        // **CRITICAL: Use data.response to get the message from Ollama**
+        if (data[0].output) {
+             addMessage(data[0].output, "machine");
+        } else {
+             addMessage("Error: Could not find 'response' field in API data.", "machine");
+        }
+
+        //const data = await response.json();
+        //addMessage(data[0].output, "machine");
+    
+    
+    
     }catch(error){
         alert(error.message);
     }

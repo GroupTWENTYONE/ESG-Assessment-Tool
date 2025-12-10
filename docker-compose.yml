@@ -9,7 +9,8 @@ services:
     depends_on:
       n8n:
         condition: service_healthy
-  
+    networks:
+    - n8n-network
   ollama:
     image: ollama/ollama
     ports:
