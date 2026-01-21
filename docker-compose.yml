@@ -1,5 +1,5 @@
 services:
-  express-frontend:
+  express-server:
     build:
       context: .
       dockerfile: ./Business-Layer/Express-Server/Dockerfile
@@ -10,19 +10,15 @@ services:
       n8n:
         condition: service_healthy
     networks:
-    - n8n-network
+      - n8n-network
+  
   ollama:
     image: ollama/ollama
+    container_name: ollama
     ports:
       - "11434:11434"
-    container_name: ollama
     networks:
       - n8n-network
-
-    command: >
-      /bin/sh -c "
-      /bin/ollama pull llama3-groq-tool-use:8b 
-      "
     volumes:
       - ollama_data:/root/.ollama
 
@@ -43,12 +39,43 @@ services:
       - NODE_FUNCTION_ALLOW_EXTERNAL=*
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./Business-Layer:/data
+      - n8n_import_data:/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
       interval: 15s
       timeout: 5s
       retries: 5
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./DataAccess-Layer/db-config/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./DataAccess-Layer/company_db.companies.js:/docker-entrypoint-initdb.d/company_db.companies.js:ro
+    environment:
+      MONGO_INITDB_DATABASE: company_db
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - n8n-network
+
+  database-webgui:
+    image: mongo-express:latest
+    container_name: database-webgui
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      - mongodb
+    networks:
+      - n8n-network
 
 networks:
   n8n-network:
@@ -56,3 +83,5 @@ networks:
 volumes:
   ollama_data:
   n8n_data:
+  n8n_import_data:
+  mongodb_data:

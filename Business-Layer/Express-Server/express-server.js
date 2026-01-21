@@ -11,39 +11,18 @@ app.get("/", (req, res) => {
    res.sendFile(path.join(__dirname, "../../Presentation-Layer/public/index.html"));
 })
 
-/*app.post("/api/forward", async (req, res) => {
-
-    const clientMessage = req.body.prompt; 
-
-    try{
-        const response = await fetch("http://localhost:5678/webhook-test/chat-gemini", {
-            method: "POST",
-            headers:{
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                query: clientMessage 
-            })
-        });
-        const data = await response.json();
-        res.json(data);
-    }catch(error){
-        res.status(500).json({ error: error.message });
-    }
-})*/
-
 app.post("/api/forward", async (req, res) => {
     const clientMessage = req.body.prompt; 
 
-    try {
-        const response = await fetch("http://n8n:5678/webhook/chat-gemini", {
+    try{
+        const response = await fetch("http://n8n:5678/webhook/ESG-chatbot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: clientMessage })
         });
 
         // 1. First, check if the response status is OK (e.g., 200)
-        if (!response.ok) {
+        if(!response.ok){
             console.error(`External API returned status: ${response.status}`);
             const errorText = await response.text();
             console.error("External API Body:", errorText);
@@ -53,11 +32,11 @@ app.post("/api/forward", async (req, res) => {
         // 2. Clone the response so we can safely read it twice
         const responseClone = response.clone();
         
-        try {
+        try{
             // Attempt to parse as JSON (what you originally wanted)
             const data = await response.json();
             res.json(data);
-        } catch (jsonError) {
+        }catch(jsonError){
             // 3. If JSON parsing fails, read the raw text for debugging
             const rawText = await responseClone.text();
             console.error("JSON PARSE FAILED. Raw Response from N8N:", rawText);
@@ -65,7 +44,7 @@ app.post("/api/forward", async (req, res) => {
             throw new Error("Could not parse JSON response from N8N. Check server console for raw text.");
         }
 
-    } catch (error) {
+    }catch(error){
         console.error("Final PROXY CRASH:", error.message);
         res.status(500).json({ error: error.message });
     }
