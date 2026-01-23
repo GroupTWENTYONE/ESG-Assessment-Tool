@@ -11,43 +11,49 @@ app.get("/", (req, res) => {
    res.sendFile(path.join(__dirname, "../../Presentation-Layer/public/index.html"));
 })
 
+const { connectDB } = require("./db");
+
+function extractCompanyFromPrompt(prompt) {
+    const match = prompt.match(/(?:of|for)\s+([A-Za-z0-9 .,&-]+?)(?:\s+and\b|[?.]|$)/i);
+    return match ? match[1].trim() : null;
+}
+
 app.post("/api/forward", async (req, res) => {
-    const clientMessage = req.body.prompt; 
+    const userPrompt = req.body.prompt;
 
-    try{
-        const response = await fetch("http://n8n:5678/webhook/ESG-chatbot", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: clientMessage })
-        });
+  try{
+    const db = await connectDB();
+    const companyName = extractCompanyFromPrompt(userPrompt);
+    const companies = await db.collection("companies").find({ name: new RegExp(companyName.trim(), "i") }).toArray();
+    const context = companies.map(c => `Company: ${c.name}, ESG Score: ${c.spglobal_esg_score}`).join("\n");
+    const finalPrompt = `
+        You are an ESG expert.
+        Use the following company data to answer the question.
+        But never mention that data has been provided to you.
 
-        // 1. First, check if the response status is OK (e.g., 200)
-        if(!response.ok){
-            console.error(`External API returned status: ${response.status}`);
-            const errorText = await response.text();
-            console.error("External API Body:", errorText);
-            throw new Error(`External API Error: Status ${response.status}`);
-        }
+        DATA:
+        ${context}
 
-        // 2. Clone the response so we can safely read it twice
-        const responseClone = response.clone();
-        
-        try{
-            // Attempt to parse as JSON (what you originally wanted)
-            const data = await response.json();
-            res.json(data);
-        }catch(jsonError){
-            // 3. If JSON parsing fails, read the raw text for debugging
-            const rawText = await responseClone.text();
-            console.error("JSON PARSE FAILED. Raw Response from N8N:", rawText);
-            // Re-throw the error or send a descriptive 500
-            throw new Error("Could not parse JSON response from N8N. Check server console for raw text.");
-        }
+        QUESTION:
+        ${userPrompt}
+    `;
 
-    }catch(error){
-        console.error("Final PROXY CRASH:", error.message);
-        res.status(500).json({ error: error.message });
-    }
+    const ollamaResponse = await fetch("http://ollama:11434/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model: "llama3-groq-tool-use:8b",
+            prompt: finalPrompt,
+            stream: false
+      })
+    });
+
+    const data = await ollamaResponse.json();
+    res.json(data);
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(80, () => console.log("Server running on http://localhost:80"))

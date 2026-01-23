@@ -53,12 +53,12 @@ async function send(){
         const data = await response.json();
         console.log(data);
         // **CRITICAL: Use data.response to get the message from Ollama**
-        if(data[0].output){
-            addMessage(data[0].output, "machine");
+        if(data.response){
+            addMessage(data.response, "machine");
         }else{
             addMessage("Error: Could not find 'response' field in API data.", "machine");
         }
     }catch(error){
-        alert(error.message);
+        alert(error.message); // can't access property "output", data[0] is undefined
     }
 }

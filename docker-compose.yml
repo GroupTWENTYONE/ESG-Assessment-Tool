@@ -6,45 +6,14 @@ services:
     container_name: express-server
     ports:
       - "80:80"
-    depends_on:
-      n8n:
-        condition: service_healthy
-    networks:
-      - n8n-network
   
   ollama:
     image: ollama/ollama
     container_name: ollama
     ports:
       - "11434:11434"
-    networks:
-      - n8n-network
     volumes:
       - ollama_data:/root/.ollama
-
-  n8n:
-    image: n8nio/n8n
-    container_name: n8n
-    ports:
-      - "5678:5678"
-    networks:
-      - n8n-network
-    environment:
-      - N8N_HOST=n8n
-      - N8N_PORT=5678
-      - N8N_BASIC_AUTH_ACTIVE=false
-      - N8N_USER_MANAGEMENT_DISABLED=true
-      - N8N_IMPORT_EXPORT_DIR=/data
-      - N8N_IMPORT_ON_START=full
-      - NODE_FUNCTION_ALLOW_EXTERNAL=*
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - n8n_import_data:/data
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
 
   mongodb:
     image: mongo:latest
@@ -59,8 +28,6 @@ services:
       MONGO_INITDB_DATABASE: company_db
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
-    networks:
-      - n8n-network
 
   database-webgui:
     image: mongo-express:latest
@@ -74,11 +41,6 @@ services:
       ME_CONFIG_BASICAUTH: "false"
     depends_on:
       - mongodb
-    networks:
-      - n8n-network
-
-networks:
-  n8n-network:
 
 volumes:
   ollama_data:

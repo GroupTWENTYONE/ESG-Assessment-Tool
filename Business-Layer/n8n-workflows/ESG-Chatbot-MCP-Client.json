@@ -1,0 +1,130 @@
+{
+  "name": "ESG-Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=## Steps to follow\n\n# User message\n\n={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "You are a friendly Agent designed to answer the message from the JSON body. Do that to the best of your abillity"
+        }
+      },
+      "id": "8beda178-3b7b-4d4a-8d15-12a9c198a962",
+      "name": "Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ESG-chatbot",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1b1b78ab-14a1-4e85-92ab-9333f56a7319",
+      "name": "Webhook",
+      "webhookId": "5574630c-c6f9-4883-909a-900a7396bc09"
+    },
+    {
+      "parameters": {
+        "model": "llama3-groq-tool-use:8b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        208,
+        192
+      ],
+      "id": "d5f08028-26f6-4d94-91e1-6a2a9c5c3c6e",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "f5LTpMYC4l3CwWZm",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://n8n:5678/mcp/a6c19a27-a23f-4cc5-b4f1-bdfa10db58a6",
+        "include": "selected",
+        "includeTools": [
+          "Find_documents_in_MongoDB"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        352,
+        352
+      ],
+      "id": "ba2ee1b2-110e-4384-9ae6-0eee4eb2a7e0",
+      "name": "MCP Client"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent": {
+      "main": [
+        []
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b1344993-75ff-49f9-a3b3-0164e2605916",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa6c2047c4afa1fed951253e275f24179c6bfbfa61c66be0948db247b6ce6ea4"
+  },
+  "id": "9mhfx6Hr5JOoUeKj",
+  "tags": []
+}
