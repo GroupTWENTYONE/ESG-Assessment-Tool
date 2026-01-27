@@ -9,3 +9,4 @@ ML/ml_ready_data/*
 ML/models/*
 ML/esg_aggregator_model.pth
 DataCollector/spg_global_data/*
+node_modules/

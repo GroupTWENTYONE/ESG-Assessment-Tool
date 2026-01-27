@@ -1,0 +1,64 @@
+{
+  "name": "MCP Server Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "a6c19a27-a23f-4cc5-b4f1-bdfa10db58a6"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        384,
+        384
+      ],
+      "id": "75c509a0-38bb-436b-a05a-7b841870356c",
+      "name": "MCP Server Trigger",
+      "webhookId": "a6c19a27-a23f-4cc5-b4f1-bdfa10db58a6"
+    },
+    {
+      "parameters": {
+        "collection": "companies",
+        "options": {},
+        "query": "{\n  \"company\": \"={{$json.company}}\"\n}"
+      },
+      "type": "n8n-nodes-base.mongoDbTool",
+      "typeVersion": 1.2,
+      "position": [
+        528,
+        608
+      ],
+      "id": "0b3ac5f5-8472-48f1-ae4f-65fc81de1b83",
+      "name": "Find documents in MongoDB",
+      "credentials": {
+        "mongoDb": {
+          "id": "nlvdff9CRy9jsQov",
+          "name": "MongoDB account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Find documents in MongoDB": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a2a6aa76-7aa8-4493-b397-f3635dbbc826",
+  "meta": {
+    "instanceId": "2a992297153410845f860f4eb1cbebf7778b4fab0e354aa3f35805b6500955f7"
+  },
+  "id": "breinsC47VQN7yqr",
+  "tags": []
+}

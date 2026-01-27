@@ -1,0 +1,49 @@
+services:
+  express-server:
+    build:
+      context: .
+      dockerfile: ./Business-Layer/Express-Server/Dockerfile
+    container_name: express-server
+    ports:
+      - "80:80"
+  
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./DataAccess-Layer/db-config/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./DataAccess-Layer/company_db.companies.js:/docker-entrypoint-initdb.d/company_db.companies.js:ro
+    environment:
+      MONGO_INITDB_DATABASE: company_db
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  database-webgui:
+    image: mongo-express:latest
+    container_name: database-webgui
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      - mongodb
+
+volumes:
+  ollama_data:
+  n8n_data:
+  n8n_import_data:
+  mongodb_data:
